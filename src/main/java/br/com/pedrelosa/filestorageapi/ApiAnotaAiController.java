@@ -25,24 +25,28 @@ public class ApiAnotaAiController {
                 .toAbsolutePath().normalize();
     }
 
-    @PostMapping("/ipserver")
-    public ResponseEntity<String> uploadFile(@RequestParam("file")MultipartFile file){
+    @PostMapping("/ipserver/{diretorio}")
+    public ResponseEntity<String> uploadFileDiretorioEspecifico(
+            @PathVariable String diretorio,
+            @RequestParam("file")MultipartFile file){
         String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
-        System.out.println(fileName);
+        String caminhoAbsoluto = (fileStorageLocation.toUri().getRawPath() + diretorio).substring(1);
 
         try {
-            Path targetLocation = fileStorageLocation.resolve(fileName);
-            System.out.println(targetLocation.getFileName());
+            Path targetLocation = Path.of(caminhoAbsoluto + fileName);
             file.transferTo(targetLocation);
 
             String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/api/files/download/")
+                    .path("/api/files/download/" + diretorio + "/")
                     .path(fileName)
                     .toUriString();
+
+            System.out.println(fileDownloadUri);
 
             return ResponseEntity.ok("Upload completed! Download link: " + fileDownloadUri);
 
         }catch (IOException ex){
+            ex.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
 
